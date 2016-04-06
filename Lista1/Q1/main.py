@@ -2,26 +2,6 @@ from random import shuffle
 from operator import itemgetter
 import math
 
-f = open('breast-cancer-wisconsin.data', 'r')
-
-dataset = []
-attr_count = len(f.readline().split(','))
-class_index = attr_count - 1
-
-f.seek(0)
-for line in f:
-    line = line.rstrip().split(',')
-    if(len(line) == attr_count and not '?' in line):
-        dataset.append(line)
-
-dataset_size = len(dataset)
-trainning_size = int(round(len(dataset) * 0.6, 0))
-test_size = dataset_size - trainning_size
-
-shuffle(dataset)
-trainning_set = dataset[0:trainning_size]
-test_set = dataset[trainning_size:]
-
 def kNN(k, x):
     global trainning_set
     global trainning_size
@@ -65,3 +45,32 @@ def euclidianDistance(x, y):
     
     distance = math.sqrt(s)
     return distance
+
+
+f = open('breast-cancer-wisconsin.data', 'r')
+
+dataset = []
+attr_count = len(f.readline().split(','))
+class_index = attr_count - 1
+
+f.seek(0)
+for line in f:
+    line = line.rstrip().split(',')
+    if(len(line) == attr_count and not '?' in line):
+        dataset.append(line)
+
+dataset_size = len(dataset)
+trainning_size = int(round(len(dataset) * 0.6, 0))
+test_size = dataset_size - trainning_size
+
+shuffle(dataset)
+trainning_set = dataset[0:trainning_size]
+test_set = dataset[trainning_size:]
+
+i = 0;
+for t in test_set:
+    c = kNN(15, t)
+    if(c != t[class_index]):
+        print "Classification: " + c + " Correct answer: " + t[class_index]
+        i = i + 1
+print "Errors: " + str(i)
