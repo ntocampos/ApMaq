@@ -3,13 +3,17 @@ from operator import itemgetter
 import math
 import csv
 
+class Attribute:
+    classes = [{}]
+    total = 0
+
 def kNN(k, x):
     global trainning_set
     global class_index
     
     distances = []
     for t in trainning_set:
-        distances.append({'distance': euclidianDistance(t, x), 'class': t[class_index]})
+        distances.append({'distance': vdmDistance(t, x, 2), 'class': t[class_index]})
     
     sorted_list = sorted(distances, key=itemgetter('distance'))
     
@@ -34,38 +38,64 @@ def kNN(k, x):
                 
         return cl     
     
-def euclidianDistance(x, y):
-    s = 0
+def countClasses():
+    classes = []
+    for data in trainning_set:
+        if(data[class_index] not in classes):
+            classes.append(data[class_index])
+
+    return classes
+
+def countAttr():
+    global trainning_set
+    attr = []
+    for i in range(class_index):
+        attr.append({})
+
+    for data in trainning_set:
+        for i in range(0, class_index):
+            if data[i] not in attr[i]:
+                attr[i][data[i]] =  1
+            else:
+                attr[i][data[i]] += 1
+
+    return attr
+
+def countAttr2(attr, i):
+    global trainning_set
     
-    # starting at 1 to ignore the ID and class, irrelevant to the classification
-    for i in range(1, len(x) - 1):
-        s = s + ((int(x[i]) - int(y[i])) ** 2)
+    return float(len([x for x in trainning_set if x[i] == attr]))
+
+def countAttrClasses(attr, i, c):
+    global trainning_set
     
-    distance = math.sqrt(s)
-    return distance
+    return float(len([x for x in trainning_set if x[i] == attr and x[class_index] == c]))
 
-def dataToFloat(input):
-    for i in range(0, len(input)):
-        # starting at 1 to ignore the ID, stoping before the last to ignore the class
-        for j in range(1, len(input[i]) - 1):
-            input[i][j] = float(input[i][j])
+def Niac(i, val, cl):
+    global trainning_set
+    count  = 0
 
-    return input
+    for data in trainning_set:
+        if(data[i] == val and data[class_index] == cl):
+            count += 1
 
-def normalizeInput(input):
-    for j in range(1, class_index):
-        minimum = 100000.0
-        maximum = -999999.0
-        for i in range(0, len(input)):
-            if(input[i][j] > maximum):
-                maximum = input[i][j]
-            if(input[i][j] < minimum):
-                minimum = input[i][j]
+    return float(count)
+ 
+def vdmDistance(x, y, q = 2):
+    classes = countClasses()
+    attr = countAttr()
+    sum_attr = 0.0
 
-        for i in range(0, len(input)):
-            input[i][j] = float((input[i][j] - minimum) / (maximum - minimum))
+    for i in range(0, class_index):
+        sum_cl = 0.0
+        for c in classes:
+            #sum_cl += abs(countAttrClasses(x[i], i, c) / attr[i][x[i]] - countAttrClasses(y[i], i, c) / attr[i][y[i]])**q
+            #print str(countAttrClasses(x[i], i, c)) +  "/" + str(countAttr2(x[i], i)) + "-" + str(countAttrClasses(y[i], i, c)) + "/" + str(countAttr2(y[i], i))
+            sum_cl += abs(countAttrClasses(x[i], i, c) / countAttr2(x[i], i) - countAttrClasses(y[i], i, c) / countAttr2(y[i], i))**q
 
-    return input
+        sum_attr += sum_cl
+
+    return math.sqrt(sum_attr)
 
 def preprocessData(filename):
     global class_index
@@ -82,12 +112,11 @@ def preprocessData(filename):
         if(len(line) == attr_count and not '?' in line):
             dataset.append(line)
 
-    dataset_size = len(dataset)
-    trainning_size = int(round(len(dataset) * 0.7, 0))
-    test_size = dataset_size - trainning_size
+    dataset = dataset[1:]
 
-    dataset = dataToFloat(dataset)
-    dataset = normalizeInput(dataset)
+    dataset_size = len(dataset)
+    trainning_size = int(round(len(dataset) * 0.3, 0))
+    test_size = dataset_size - trainning_size
 
     shuffle(dataset)
     
@@ -115,18 +144,24 @@ def runTests(filename, k):
     print "Accuracy: " + str(1 - float(i) / float(len(test_set)))
     print "\n"
 
+    return 1 - float(i) / float(len(test_set))
+
   
 def main():    
     global trainning_set
     global class_index
     k = [1, 2, 3, 5, 7, 9, 11, 13, 15]
+    acc = []
 
-    filenames = ['breast-cancer-wisconsin.data', 'wine.data']
+    filenames = ['diagnosis2.data', 'pro-bloggers.data']
 
     for filename in filenames:
+        acc.append(filename)
         for i in k:
-            runTests(filename, i)
+            acc.append(runTests(filename, i))
 
+    print k
+    print acc
     
 if __name__ == "__main__":
     main()
